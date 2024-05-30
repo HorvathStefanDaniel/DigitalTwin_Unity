@@ -2,17 +2,25 @@ using UnityEngine;
 
 public class SensorScript : MonoBehaviour
 {
-    public Transform sensor; 
-    public Transform parentTransform; 
+    public Transform sensor;
+    public Transform parentTransform;
     public float distance = 10.0f;
-    public Material pointMaterial;  
+    public Material pointMaterial;
 
     void Start()
     {
         CreatePoint();
     }
 
-    void CreatePoint()
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            CreatePoint();
+        }
+    }
+
+    public void CreatePoint() // Make this method public
     {
         Vector3 pointPosition = sensor.position + sensor.forward * distance;
         GameObject point = new GameObject("Point");

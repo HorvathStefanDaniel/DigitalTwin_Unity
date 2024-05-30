@@ -10,7 +10,7 @@ public class FollowCursor : MonoBehaviour
 
     private Camera mainCamera;
     private bool isDragging;
-    private float sendInterval = 0.5f; // Interval in seconds
+    private float sendInterval = 0.1f; // Interval in seconds
     private float timeSinceLastSend;
 
     void Start()

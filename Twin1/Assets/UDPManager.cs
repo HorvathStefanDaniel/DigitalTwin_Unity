@@ -6,13 +6,11 @@ using UnityEngine;
 
 public class UDPManager : MonoBehaviour
 {
-    // Static variable that holds the instance
     public static UDPManager Instance { get; private set; }
 
-    // UDP Settings
     [Header("UDP Settings")]
     [SerializeField] private int UDPPort = 50195;
-    [SerializeField] private bool displayUDPMessages = true; // Enable message display for debugging
+    [SerializeField] private bool displayUDPMessages = false;
     private UdpClient udpClient;
     private IPEndPoint endPoint;
     private bool isClosing = false;
@@ -26,9 +24,18 @@ public class UDPManager : MonoBehaviour
 
     public string esp32Ip = "192.168.137.172";
 
+    public SensorScript sensorScript; // Reference to the SensorScript
+
+    public Transform Axis1; // Reference to Axis 1 Transform (Joint A)
+    public Transform Axis2; // Reference to Axis 2 Transform (Joint B)
+    public Transform Axis3; // Reference to Axis 3 Transform (Joint C)
+    public Transform Plate;
+
+    private string receivedData;
+    private bool dataReceived;
+
     void Awake()
     {
-        // Assign the instance to this instance, if it is the first one
         if (Instance == null)
         {
             Instance = this;
@@ -39,29 +46,30 @@ public class UDPManager : MonoBehaviour
         }
     }
 
-    // Start is called before the first frame update
     void Start()
     {
-        // Get IP Address
         DisplayIPAddress();
-
-        // UDP begin
         endPoint = new IPEndPoint(IPAddress.Any, UDPPort);
         udpClient = new UdpClient(endPoint);
         udpClient.BeginReceive(ReceiveCallback, null);
     }
 
-    // Update is called once per frame
     void Update()
     {
+        if (dataReceived)
+        {
+            HandleReceivedData(receivedData);
+            dataReceived = false;
+        }
+
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            SendUDPMessage("Servo|A:90|B:90|C:90|D:stop");
+            SendUDPMessage("D:start");
         }
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            SendUDPMessage("Servo|A:45|B:45|C:45|D:stop");
+            SendUDPMessage("D:stop");
         }
     }
 
@@ -73,23 +81,21 @@ public class UDPManager : MonoBehaviour
         try
         {
             byte[] receivedBytes = udpClient.EndReceive(result, ref endPoint);
-            string receivedData = Encoding.UTF8.GetString(receivedBytes);
+            string data = Encoding.UTF8.GetString(receivedBytes);
 
-            // Log UDP message
             if (displayUDPMessages)
             {
-                Debug.Log("Received data from " + endPoint.Address.ToString() + ": " + receivedData);
+                Debug.Log("Received data from " + endPoint.Address.ToString() + ": " + data);
             }
 
-            // Handle the received data
-            HandleReceivedData(receivedData);
+            // Store the received data to be processed in the Update method
+            receivedData = data;
+            dataReceived = true;
 
-            // Begin receiving again
             udpClient.BeginReceive(ReceiveCallback, null);
         }
         catch (ObjectDisposedException)
         {
-            // Ignore if the client has been disposed
         }
         catch (Exception e)
         {
@@ -97,18 +103,17 @@ public class UDPManager : MonoBehaviour
         }
     }
 
-    // Function to send UDP message
     public void SendUDPMessage(string message)
     {
         UdpClient client = new UdpClient();
         try
         {
-            // Convert the message string to bytes
             byte[] data = Encoding.UTF8.GetBytes(message);
-
-            // Send the UDP message
             client.Send(data, data.Length, esp32Ip, 3002);
-            Debug.Log("UDP message sent: " + message);
+            if (displayUDPMessages)
+            {
+                Debug.Log("UDP message sent: " + message);
+            }
         }
         catch (Exception e)
         {
@@ -143,7 +148,6 @@ public class UDPManager : MonoBehaviour
     private void OnDestroy()
     {
         isClosing = true;
-
         if (udpClient != null)
         {
             udpClient.Close();
@@ -152,7 +156,6 @@ public class UDPManager : MonoBehaviour
 
     private void HandleReceivedData(string data)
     {
-        // Example message format: "Sensors|A:45|B:90|C:135|Plate:180|Dist:50"
         if (data.StartsWith("Sensors"))
         {
             string[] parts = data.Split('|');
@@ -160,15 +163,18 @@ public class UDPManager : MonoBehaviour
             {
                 if (part.StartsWith("A:"))
                 {
-                    AngleA = int.Parse(part.Substring(2));
+                    float espAngle = float.Parse(part.Substring(2));
+                    AngleA = NormalizeAngle((int)MapAngleA(espAngle));
                 }
                 else if (part.StartsWith("B:"))
                 {
-                    AngleB = int.Parse(part.Substring(2));
+                    float espAngle = float.Parse(part.Substring(2));
+                    AngleB = NormalizeAngle((int)MapAngleB(espAngle));
                 }
                 else if (part.StartsWith("C:"))
                 {
-                    AngleC = int.Parse(part.Substring(2));
+                    float espAngle = float.Parse(part.Substring(2));
+                    AngleC = NormalizeAngle( (int)MapAngleC(espAngle));
                 }
                 else if (part.StartsWith("Plate:"))
                 {
@@ -180,15 +186,97 @@ public class UDPManager : MonoBehaviour
                 }
             }
 
-            // Display the received values
             if (displayUDPMessages)
             {
                 Debug.Log($"Angles - A: {AngleA}, B: {AngleB}, C: {AngleC}, Plate: {PlateAngle}, Distance: {Distance}");
             }
+
+            // Update the distance in the SensorScript and create a point
+            if (sensorScript != null)
+            {
+                sensorScript.distance = Distance / 1.0f; // distance is in cm, convert to meters
+                sensorScript.CreatePoint();
+            }
+            else
+            {
+                Debug.Log("Sensor script is null");
+            }
+
+            // Update the arm angles
+            UpdateArmAngles();
         }
         else
         {
             Debug.LogError("Received data is not in the expected format.");
         }
     }
+
+
+    private float MapAngleA(float espAngle)
+    {
+        if (espAngle >= 0)
+        {
+            return Mathf.Lerp(0, -90, Mathf.InverseLerp(0, 84, espAngle));
+        }
+        else
+        {
+            return Mathf.Lerp(0, 90, Mathf.InverseLerp(0, -96, espAngle));
+        }
+    }
+
+    private float MapAngleB(float espAngle)
+    {
+
+        float temp = 0f;
+
+        if (espAngle >= 14)
+        {
+            temp = Mathf.Lerp(0, -120, Mathf.InverseLerp(14, 121, espAngle));
+        }
+        else
+        {
+            temp = Mathf.Lerp(1, 50, Mathf.InverseLerp(14, -45, espAngle));
+        }
+        return temp;
+
+    }
+
+
+
+    private float MapAngleC(float espAngle)
+    {
+        if (espAngle >= 8)
+        {
+            return Mathf.Lerp(0, -90, Mathf.InverseLerp(8, 90, espAngle));
+        }
+        else
+        {
+            return Mathf.Lerp(0, 90, Mathf.InverseLerp(8, -90, espAngle));
+        }
+    }
+
+    private int NormalizeAngle(float angle)
+    {
+        while (angle < -180) angle += 360;
+        while (angle > 180) angle -= 360;
+        return Mathf.RoundToInt(angle);
+    }
+
+    private void UpdateArmAngles()
+    {
+        // Add logging to check the values before they are set
+        Debug.Log($"Updating Arm Angles: AngleA: {AngleA}, AngleB: {AngleB}, AngleC: {AngleC}");
+
+        Plate.localEulerAngles = new Vector3(Plate.localEulerAngles.x, Plate.localEulerAngles.y, PlateAngle);
+
+        Quaternion rotationA = Quaternion.Euler(AngleA, 0, 0);
+        Quaternion rotationB = Quaternion.Euler(AngleB, 0, 0);
+        Quaternion rotationC = Quaternion.Euler(AngleC, 0, 0);
+
+        // Apply rotations using quaternions
+        Axis1.localRotation = rotationA;
+        Axis2.localRotation = rotationB;
+        Axis3.localRotation = rotationC;
+    }
+
 }
