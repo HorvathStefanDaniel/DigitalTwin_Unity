@@ -31,7 +31,7 @@ public class Potentiometer : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        RotateObject(UDPManager.Instance.potentiometerValue);
+        RotateObject(UDPManager.Instance.AngleA);
     }
 
     private void RotateObject(float value)

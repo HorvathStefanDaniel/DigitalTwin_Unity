@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class UDPManager : MonoBehaviour
@@ -15,12 +12,19 @@ public class UDPManager : MonoBehaviour
     // UDP Settings
     [Header("UDP Settings")]
     [SerializeField] private int UDPPort = 50195;
-    [SerializeField] private bool displayUDPMessages = false;
+    [SerializeField] private bool displayUDPMessages = true; // Enable message display for debugging
     private UdpClient udpClient;
     private IPEndPoint endPoint;
+    private bool isClosing = false;
 
-    // ESP32 Sensor
-    public int potentiometerValue { get; private set; } = 0; 
+    // ESP32 Sensor Angles
+    public int AngleA { get; private set; } = 0;
+    public int AngleB { get; private set; } = 0;
+    public int AngleC { get; private set; } = 0;
+    public int PlateAngle { get; private set; } = 0;
+    public long Distance { get; private set; } = 0;
+
+    private string esp32Ip = "192.168.137.172";
 
     void Awake()
     {
@@ -38,7 +42,7 @@ public class UDPManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //Get IP Address
+        // Get IP Address
         DisplayIPAddress();
 
         // UDP begin
@@ -52,48 +56,45 @@ public class UDPManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            SendUDPMessage("LED|1", "192.168.137.220", 3002);
+            SendUDPMessage("Servo|A:90|B:90|C:90|D:stop", esp32Ip, 3002);
         }
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            SendUDPMessage("LED|0", "192.168.137.220", 3002);
+            SendUDPMessage("Servo|A:45|B:45|C:45|D:stop", esp32Ip, 3002);
         }
     }
 
     private void ReceiveCallback(IAsyncResult result)
     {
-        byte[] receivedBytes = udpClient.EndReceive(result, ref endPoint);
-        string receivedData = Encoding.UTF8.GetString(receivedBytes);
+        if (isClosing)
+            return;
 
-        // Log UDP message
-        if (displayUDPMessages)
+        try
         {
-            Debug.Log("Received data from " + endPoint.Address.ToString() + ": " + receivedData);
-        }
+            byte[] receivedBytes = udpClient.EndReceive(result, ref endPoint);
+            string receivedData = Encoding.UTF8.GetString(receivedBytes);
 
-        // Splitting the receivedData string by the '|' character
-        string[] parts = receivedData.Split('|');
-
-        if (parts.Length == 2) 
-        {
-            string sensorID = parts[0];
-            int value;
-            if (int.TryParse(parts[1], out value))
+            // Log UDP message
+            if (displayUDPMessages)
             {
-                potentiometerValue = value;
+                Debug.Log("Received data from " + endPoint.Address.ToString() + ": " + receivedData);
             }
-            else
-            {
-                Debug.LogError("Failed to parse the value as an integer.");
-            }
-        }
-        else
-        {
-            Debug.LogError("Received data is not in the expected format.");
-        }
 
-        udpClient.BeginReceive(ReceiveCallback, null);
+            // Handle the received data
+            HandleReceivedData(receivedData);
+
+            // Begin receiving again
+            udpClient.BeginReceive(ReceiveCallback, null);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Ignore if the client has been disposed
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Error receiving UDP data: " + e.Message);
+        }
     }
 
     // Function to send UDP message
@@ -126,23 +127,68 @@ public class UDPManager : MonoBehaviour
             var host = Dns.GetHostEntry(Dns.GetHostName());
             foreach (var ip in host.AddressList)
             {
-                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    Debug.Log(ip.ToString());
+                    Debug.Log("Local IP Address: " + ip.ToString());
                     break;
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Debug.LogError("Error fetching local IP address: " + ex.Message);
         }
     }
+
     private void OnDestroy()
     {
+        isClosing = true;
+
         if (udpClient != null)
         {
             udpClient.Close();
+        }
+    }
+
+    private void HandleReceivedData(string data)
+    {
+        // Example message format: "Sensors|A:45|B:90|C:135|Plate:180|Dist:50"
+        if (data.StartsWith("Sensors"))
+        {
+            string[] parts = data.Split('|');
+            foreach (string part in parts)
+            {
+                if (part.StartsWith("A:"))
+                {
+                    AngleA = int.Parse(part.Substring(2));
+                }
+                else if (part.StartsWith("B:"))
+                {
+                    AngleB = int.Parse(part.Substring(2));
+                }
+                else if (part.StartsWith("C:"))
+                {
+                    AngleC = int.Parse(part.Substring(2));
+                }
+                else if (part.StartsWith("Plate:"))
+                {
+                    PlateAngle = int.Parse(part.Substring(6));
+                }
+                else if (part.StartsWith("Dist:"))
+                {
+                    Distance = long.Parse(part.Substring(5));
+                }
+            }
+
+            // Display the received values
+            if (displayUDPMessages)
+            {
+                Debug.Log($"Angles - A: {AngleA}, B: {AngleB}, C: {AngleC}, Plate: {PlateAngle}, Distance: {Distance}");
+            }
+        }
+        else
+        {
+            Debug.LogError("Received data is not in the expected format.");
         }
     }
 }
