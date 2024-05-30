@@ -939,7 +939,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -1053,6 +1053,7 @@ MonoBehaviour:
   sensor: {fileID: 1362241640}
   parentTransform: {fileID: 391079785}
   distance: 15
+  pointMaterial: {fileID: 2100000, guid: 9743bb3079bee8641b945337c897bb90, type: 2}
 --- !u!1 &1499287766
 GameObject:
   m_ObjectHideFlags: 0
