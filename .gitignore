@@ -1,2 +1,99 @@
-﻿Twin1/Logs
-Twin1/Temp
+﻿# This .gitignore file is optimized for Unity projects.
+
+# Ignore crash reports, logs, temp files, and build directories
+[Tt]emp/
+[Ll]ogs/
+[Ll]ibrary/
+[Bb]uild/
+[Bb]uilds/
+[Ss]ys[Te]m([Dd]ata)?/
+
+# Ignore auto-generated and cached files
+[Aa]ssets/AssetStoreTools/
+[Aa]ssets/Plugins/Editor/
+[Aa]ssets/StreamingAssets/aa
+/[Uu]ser[Ss]ettings/
+[Aa]ssets/Editor/Unity.Purchasing
+
+# Ignore other temporary and project-specific files
+*.csproj
+*.unityproj
+*.sln
+*.user
+*.userprefs
+*.pidb
+*.suo
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.unitypackage
+
+# Ignore build output
+*.apk
+*.aab
+*.obb
+*.app
+*.ipa
+*.dmg
+*.exe
+*.zip
+*.tar.gz
+*.7z
+
+# Ignore JetBrains Rider project files
+.idea/
+*.sln.iml
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore crash reports and other system files
+*.stackdump
+*.stacktrace
+
+# Ignore package manager files
+*.package.json
+*.package-lock.json
+
+# Ignore Visual Studio Code workspace and extensions settings
+.vscode/
+
+# Ignore Rider settings
+.idea/
+.idea_modules/
+
+# Ignore Visual Studio and MonoDevelop specific files
+ExportedObj/
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Ignore Play mode test results
+TestResults/
+
+# Ignore UWP build output
+UWP/
+UWP_Development/
+
+# Ignore Collaborate files
+.collab/
+
+# Ignore temporary backup files
+*.bak
+*.bak.meta
