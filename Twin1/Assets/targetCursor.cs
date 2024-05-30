@@ -10,13 +10,13 @@ public class FollowCursor : MonoBehaviour
 
     private Camera mainCamera;
     private bool isDragging;
-
     private float sendInterval = 0.5f; // Interval in seconds
     private float timeSinceLastSend;
 
     void Start()
     {
         mainCamera = Camera.main;
+        timeSinceLastSend = 0f;
     }
 
     void Update()
@@ -102,11 +102,69 @@ public class FollowCursor : MonoBehaviour
 
     private void SendJointAngles()
     {
-        float angleA = (jointA.localEulerAngles.z - 90);
-        float angleB = jointB.localEulerAngles.z;
-        float angleC = jointC.localEulerAngles.z - 90; 
+        float angleA = MapArmA(jointA.localEulerAngles.z);
+        float angleB = MapArmB(jointB.localEulerAngles.z);
+        float angleC = MapArmC(jointC.localEulerAngles.z);
 
-        string message = $"Servo|A:{angleA}|B:{angleB}|C:{angleC}|D:stop";
+        string message = $"Servo|A:{Mathf.RoundToInt(angleA)}|B:{Mathf.RoundToInt(angleB)}|C:{Mathf.RoundToInt(angleC)}|D:stop";
         UDPManager.Instance.SendUDPMessage(message);
     }
+
+    private float NormalizeAngle(float angle)
+    {
+        angle = angle % 360;
+
+        if (angle > 180)
+        {
+            angle -= 360;
+        }
+        else if (angle < -180)
+        {
+            angle += 360;
+        }
+        return angle;
+    }
+
+    private float MapArmB(float unityAngle)
+    {
+        // Normalize and map from 150 to 0 in Unity to 0 to 150 in ESP32
+        float normalizedAngle = NormalizeAngle(unityAngle);
+        return Mathf.Clamp(150 - normalizedAngle, 0, 150);
+    }
+
+    private float MapArmA(float unityAngle)
+    {
+        // Normalize the angle to ensure it is within -180 to 180 degrees
+        float normalizedAngle = NormalizeAngle(unityAngle);
+
+        // Map from 0 to 90 in Unity to 90 to 0 in ESP32
+        if (normalizedAngle >= -90 && normalizedAngle <= 90)
+        {
+            return 90 + normalizedAngle; // Reverse the direction
+        }
+        else
+        {
+            // Handle the case where the angle might be out of expected bounds
+            return Mathf.Clamp(90 + normalizedAngle, 0, 180);
+        }
+    }
+
+    private float MapArmC(float unityAngle)
+    {
+        // Normalize the angle to ensure it is within -180 to 180 degrees
+        float normalizedAngle = NormalizeAngle(unityAngle);
+
+        // Map from 0 to 90 in Unity to 90 to 0 in ESP32
+        if (normalizedAngle >= -90 && normalizedAngle <= 90)
+        {
+            return 90 + normalizedAngle; // Reverse the direction
+        }
+        else
+        {
+            // Handle the case where the angle might be out of expected bounds
+            return Mathf.Clamp(90 + normalizedAngle, 0, 180);
+        }
+    }
+
+
 }
