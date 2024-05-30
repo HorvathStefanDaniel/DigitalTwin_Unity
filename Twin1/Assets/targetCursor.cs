@@ -4,8 +4,15 @@ public class FollowCursor : MonoBehaviour
 {
     public Transform referenceObject; // Reference object to compare distance
     public SpriteRenderer colliderSprite; // Collider sprite to show/hide
+    public Transform jointA;
+    public Transform jointB;
+    public Transform jointC;
+
     private Camera mainCamera;
     private bool isDragging;
+
+    private float sendInterval = 0.5f; // Interval in seconds
+    private float timeSinceLastSend;
 
     void Start()
     {
@@ -81,5 +88,25 @@ public class FollowCursor : MonoBehaviour
                 }
             }
         }
+
+        // Update the timer
+        timeSinceLastSend += Time.deltaTime;
+
+        // Send the angles of the joints if enough time has passed
+        if (timeSinceLastSend >= sendInterval)
+        {
+            SendJointAngles();
+            timeSinceLastSend = 0f;
+        }
+    }
+
+    private void SendJointAngles()
+    {
+        float angleA = (jointA.localEulerAngles.z - 90);
+        float angleB = jointB.localEulerAngles.z;
+        float angleC = jointC.localEulerAngles.z - 90; 
+
+        string message = $"Servo|A:{angleA}|B:{angleB}|C:{angleC}|D:stop";
+        UDPManager.Instance.SendUDPMessage(message);
     }
 }

@@ -154,6 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UDPPort: 50195
   displayUDPMessages: 1
+  esp32Ip: 192.168.137.172
 --- !u!4 &213427293
 Transform:
   m_ObjectHideFlags: 0
@@ -381,6 +382,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   referenceObject: {fileID: 8478490048899331818}
   colliderSprite: {fileID: 709744516}
+  jointA: {fileID: 1499287767}
+  jointB: {fileID: 557133034}
+  jointC: {fileID: 432907085}
 --- !u!1 &557133033
 GameObject:
   m_ObjectHideFlags: 0

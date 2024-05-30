@@ -24,7 +24,7 @@ public class UDPManager : MonoBehaviour
     public int PlateAngle { get; private set; } = 0;
     public long Distance { get; private set; } = 0;
 
-    private string esp32Ip = "192.168.137.172";
+    public string esp32Ip = "192.168.137.172";
 
     void Awake()
     {
@@ -56,12 +56,12 @@ public class UDPManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            SendUDPMessage("Servo|A:90|B:90|C:90|D:stop", esp32Ip, 3002);
+            SendUDPMessage("Servo|A:90|B:90|C:90|D:stop");
         }
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            SendUDPMessage("Servo|A:45|B:45|C:45|D:stop", esp32Ip, 3002);
+            SendUDPMessage("Servo|A:45|B:45|C:45|D:stop");
         }
     }
 
@@ -98,7 +98,7 @@ public class UDPManager : MonoBehaviour
     }
 
     // Function to send UDP message
-    public void SendUDPMessage(string message, string ipAddress, int port)
+    public void SendUDPMessage(string message)
     {
         UdpClient client = new UdpClient();
         try
@@ -107,7 +107,7 @@ public class UDPManager : MonoBehaviour
             byte[] data = Encoding.UTF8.GetBytes(message);
 
             // Send the UDP message
-            client.Send(data, data.Length, ipAddress, port);
+            client.Send(data, data.Length, esp32Ip, 3002);
             Debug.Log("UDP message sent: " + message);
         }
         catch (Exception e)

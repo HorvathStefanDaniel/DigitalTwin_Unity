@@ -17,12 +17,12 @@ public class LED : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            UDPManager.Instance.SendUDPMessage("LED|1", ip, port);    
+            UDPManager.Instance.SendUDPMessage("LED|1");    
         }
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            UDPManager.Instance.SendUDPMessage("LED|0", ip, port);
+            UDPManager.Instance.SendUDPMessage("LED|0");
         }
     }
 }
