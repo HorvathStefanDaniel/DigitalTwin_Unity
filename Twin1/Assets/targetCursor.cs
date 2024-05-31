@@ -106,7 +106,7 @@ public class FollowCursor : MonoBehaviour
         float angleB = MapArmB(jointB.localEulerAngles.z);
         float angleC = MapArmC(jointC.localEulerAngles.z);
 
-        string message = $"Servo|A:{Mathf.RoundToInt(angleA)}|B:{Mathf.RoundToInt(angleB)}|C:{Mathf.RoundToInt(angleC)}|D:stop";
+        string message = $"Servo|A:{Mathf.RoundToInt(angleA)}|B:{Mathf.RoundToInt(angleB)}|C:{Mathf.RoundToInt(angleC)}|D:";
         UDPManager.Instance.SendUDPMessage(message);
     }
 

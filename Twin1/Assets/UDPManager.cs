@@ -22,7 +22,7 @@ public class UDPManager : MonoBehaviour
     public int PlateAngle { get; private set; } = 0;
     public long Distance { get; private set; } = 0;
 
-    public string esp32Ip = "192.168.137.172";
+    public string esp32Ip = "192.168.137.125";
 
     public SensorScript sensorScript; // Reference to the SensorScript
 
